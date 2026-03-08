@@ -2,3 +2,5 @@ fastapi
 newspaper3k
 uvicorn
 lxml_html_clean
+trafilatura
+bs4
