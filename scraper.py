@@ -1,3 +1,6 @@
+import requests
+import trafilatura
+from bs4 import BeautifulSoup
 from newspaper import Article, Config
 from fastapi import FastAPI
 
@@ -12,6 +15,51 @@ app = FastAPI()
 # urls = [
 #        "https://www.thehindu.com/news/international/nepal-election-2026-voting-time-results-gen-z-protests-kp-sharma-oli-world-news/article70705797.ece"
 #     ]
+
+def trafilatura_ext(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (compatible; SupplyChainNewsBot/1.0)"
+    }
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        print(response.url)
+        html = response.text
+
+        soup = BeautifulSoup(html, "lxml")
+        article_tag = soup.find("article")
+
+        if article_tag:
+            extracted_text = trafilatura.extract(
+                str(article_tag),
+                favor_recall=True,
+                include_tables=True,
+                deduplicate=False
+            )
+        else:
+            extracted_text = trafilatura.extract(
+                html,
+                favor_recall=True,
+                include_tables=True,
+                deduplicate=False
+            )
+
+        # Title extraction
+        title = None
+        if soup.title:
+            title = soup.title.get_text(strip=True)
+
+        # Step 4: Store structured result
+        return {
+            "url": url,
+            "title": title,
+            "full_text": extracted_text.strip()
+        }
+
+    except Exception as e:
+        print(f"Failed to process {url}: {e}")
+        return {'error':str(e)}
+
 
 def extract_news(url):
     try:
@@ -35,16 +83,21 @@ def extract_news(url):
         
     except Exception as e:
         print(f"Error processing {url}: {e}")
-        return {f"Error processing {url}: {e}"}
+        return {'error': str(e)}
 
 # 3. Execution and Export
 # if __name__ == "__main__":
 @app.get("/extract")
 def extract(url: str):
+    print(url)
     extracted_article = extract_news(url)
+    print('1st extraction ----->', extracted_article)
+    if(extracted_article.get('error') or (len(extracted_article['Content']) < 100)):
+        extracted_article = trafilatura_ext(url)
     print(extracted_article)
     return extracted_article
 
+# extract("https://www.bloomberg.com/news/articles/2026-03-06/reliance-seeks-russian-oil-after-us-gives-india-temporary-waiver")
     # results = extract_news(urls)
     # print(results)
     
