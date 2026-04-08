@@ -53,7 +53,7 @@ def trafilatura_ext(url):
         return {
             "url": url,
             "title": title,
-            "full_text": extracted_text.strip()
+            "full_text": extracted_text.strip() if extracted_text else ''
         }
 
     except Exception as e:
