@@ -91,7 +91,6 @@ def extract_news(url):
 def extract(url: str):
     print(url)
     extracted_article = extract_news(url)
-    print('1st extraction ----->', extracted_article)
     if(extracted_article.get('error') or (len(extracted_article['Content']) < 100)):
         extracted_article = trafilatura_ext(url)
     print(extracted_article)
